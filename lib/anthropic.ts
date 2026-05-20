@@ -27,12 +27,16 @@ const TOOLS: Anthropic.Tool[] = [
   } as unknown as Anthropic.Tool,
 ];
 
-export function createResearchStream(query: string) {
+export function createResearchStream(query: string, pastBriefContext?: string) {
+  const userContent = pastBriefContext
+    ? `Past research on related topics (use this as context and build on it where relevant):\n\n${pastBriefContext}\n\n---\n\nResearch topic: ${query}`
+    : `Research topic: ${query}`;
+
   return client.messages.stream({
     model: 'claude-sonnet-4-6',
     max_tokens: 8000,
     system: SYSTEM_PROMPT,
     tools: TOOLS,
-    messages: [{ role: 'user', content: `Research topic: ${query}` }],
+    messages: [{ role: 'user', content: userContent }],
   });
 }

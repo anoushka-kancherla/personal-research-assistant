@@ -20,9 +20,18 @@ type Props = {
   sources: Source[];
   status: 'idle' | 'searching' | 'done' | 'error';
   rawText: string;
+  driveFileUrl: string | null;
+  isAuthenticated: boolean;
 };
 
-export default function StreamingBrief({ findings, sources, status, rawText }: Props) {
+export default function StreamingBrief({
+  findings,
+  sources,
+  status,
+  rawText,
+  driveFileUrl,
+  isAuthenticated,
+}: Props) {
   return (
     <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl shadow-slate-950/20">
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -117,6 +126,28 @@ export default function StreamingBrief({ findings, sources, status, rawText }: P
             ))}
           </ul>
         </div>
+      )}
+
+      {/* Drive confirmation banner */}
+      {status === 'done' && driveFileUrl && (
+        <div className="mt-6 flex items-center gap-3 rounded-2xl border border-green-900/50 bg-green-950/30 px-5 py-3">
+          <span className="text-sm font-medium text-green-400">✓ Saved to Google Drive</span>
+          <a
+            href={driveFileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto shrink-0 text-sm text-sky-500 underline underline-offset-2 hover:text-sky-400"
+          >
+            Open →
+          </a>
+        </div>
+      )}
+
+      {/* Prompt unauthenticated users to sign in */}
+      {status === 'done' && !driveFileUrl && !isAuthenticated && (
+        <p className="mt-6 text-sm text-slate-500">
+          Sign in with Google to save this brief to Drive and recall it in future sessions.
+        </p>
       )}
     </section>
   );
