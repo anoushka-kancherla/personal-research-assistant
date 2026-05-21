@@ -5,22 +5,50 @@ import ThinkingPanel from './ThinkingPanel';
 import FindingCard from './FindingCard';
 import SourcesPanel from './SourcesPanel';
 
-const STATUS_LABEL: Record<string, string> = {
-  idle: 'idle',
-  searching: 'searching…',
-  done: 'done',
-  error: 'error',
-};
+type Status = 'idle' | 'searching' | 'done' | 'error';
 
 type Props = {
   findings: Finding[];
   sources: Source[];
-  status: 'idle' | 'searching' | 'done' | 'error';
+  status: Status;
   rawText: string;
   driveFileUrl: string | null;
   isAuthenticated: boolean;
   thinkingText: string;
+  errorMessage?: string;
+  driveSaveFailed?: boolean;
+  phase: string;
+  searchCount: number;
 };
+
+function getStatusLabel(status: Status, phase: string, searchCount: number): string {
+  if (status === 'idle') return 'idle';
+  if (status === 'done') return 'done';
+  if (status === 'error') return 'error';
+  if (phase === 'thinking') return 'thinking…';
+  if (phase === 'searching') return `search ${searchCount}…`;
+  if (phase === 'synthesizing') return 'synthesizing…';
+  return 'starting…';
+}
+
+function FindingSkeleton() {
+  return (
+    <div className="border-t border-rule pt-5">
+      <div className="flex items-start justify-between">
+        <div className="h-3 w-6 animate-pulse rounded bg-surface2" />
+        <div className="h-3 w-14 animate-pulse rounded bg-surface2" />
+      </div>
+      <div className="mt-4 space-y-2">
+        <div className="h-4 w-full animate-pulse rounded bg-surface2" />
+        <div className="h-4 w-[90%] animate-pulse rounded bg-surface2" />
+      </div>
+      <div className="mt-3 space-y-1.5">
+        <div className="h-3 w-4/5 animate-pulse rounded bg-surface2" />
+        <div className="h-3 w-3/5 animate-pulse rounded bg-surface2" />
+      </div>
+    </div>
+  );
+}
 
 export default function StreamingBrief({
   findings,
@@ -30,78 +58,109 @@ export default function StreamingBrief({
   driveFileUrl,
   isAuthenticated,
   thinkingText,
+  errorMessage,
+  driveSaveFailed,
+  phase,
+  searchCount,
 }: Props) {
+  const statusLabel = getStatusLabel(status, phase, searchCount);
+  const isSkeletonVisible =
+    status === 'searching' && findings.length === 0 && !rawText && !thinkingText;
+
   return (
-    <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl shadow-slate-950/20">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-white">Research brief</h2>
-          <p className="mt-1 text-sm text-slate-400">Live output from the research engine.</p>
-        </div>
-        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.25em] text-slate-400">
-          {STATUS_LABEL[status]}
+    <section>
+      {/* Section header */}
+      <div className="mb-8 flex items-center justify-between border-b border-rule pb-5">
+        <h2 className="font-serif text-2xl font-medium text-cream">Research brief</h2>
+        <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
+          {statusLabel}
         </span>
       </div>
 
       {status === 'idle' && (
-        <div className="rounded-3xl border border-dashed border-slate-700 p-8 text-slate-400">
-          Enter a topic above to start researching.
-        </div>
+        <p className="text-sm text-muted">Enter a topic above to start researching.</p>
       )}
 
-      {status === 'error' && (
-        <div className="rounded-2xl border border-red-900/50 bg-red-950/30 p-5 text-red-400">
-          Something went wrong. Check your API key and try again.
-        </div>
-      )}
+      {status !== 'idle' && (
+        <div className="grid grid-cols-1 gap-x-14 gap-y-10 lg:grid-cols-[1fr_260px]">
 
-      {/* Raw text while streaming before JSON is parseable */}
-      {status === 'searching' && findings.length === 0 && (
-        <pre className="min-h-24 overflow-x-auto whitespace-pre-wrap break-words rounded-2xl bg-slate-950 p-5 text-xs leading-relaxed text-slate-400">
-          {rawText || 'Searching the web…'}
-        </pre>
-      )}
+          {/* ── Main column ── */}
+          <div>
+            {status === 'error' && (
+              <p className="text-sm leading-relaxed text-coral-conf">
+                {errorMessage ?? 'Something went wrong. Check your API key and try again.'}
+              </p>
+            )}
 
-      <ThinkingPanel thinkingText={thinkingText} />
+            {/* Skeleton — nothing has arrived yet */}
+            {isSkeletonVisible && (
+              <div>
+                <FindingSkeleton />
+                <FindingSkeleton />
+                <FindingSkeleton />
+              </div>
+            )}
 
-      {findings.length > 0 && (
-        <div className="space-y-4">
-          {findings.map((finding, index) => (
-            <FindingCard key={index} finding={finding} index={index} />
-          ))}
-        </div>
-      )}
+            {/* Raw text — Claude is writing JSON but it's not parseable yet */}
+            {status === 'searching' && findings.length === 0 && rawText && (
+              <pre className="min-h-24 overflow-x-auto whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-dim">
+                {rawText}
+              </pre>
+            )}
 
-      {status === 'done' &&
-        findings.length > 0 &&
-        findings.filter((f) => f.confidence === 'low').length / findings.length >= 0.5 && (
-          <div className="mt-4 rounded-2xl border border-yellow-900/50 bg-yellow-950/30 px-5 py-3 text-sm text-yellow-400">
-            Most findings have low confidence — try a more specific query for stronger results.
+            {findings.length > 0 && (
+              <div>
+                {findings.map((finding, index) => (
+                  <FindingCard key={index} finding={finding} index={index} />
+                ))}
+              </div>
+            )}
+
+            {status === 'done' &&
+              findings.length > 0 &&
+              findings.filter((f) => f.confidence === 'low').length / findings.length >= 0.5 && (
+                <p className="mt-6 text-sm text-amber-conf">
+                  Most findings have low confidence — try a more specific query for stronger results.
+                </p>
+              )}
           </div>
-        )}
 
-      <SourcesPanel sources={sources} findings={findings} />
+          {/* ── Sidebar ── */}
+          <div className="space-y-6">
+            <ThinkingPanel thinkingText={thinkingText} />
 
-      {/* Drive confirmation banner */}
-      {status === 'done' && driveFileUrl && (
-        <div className="mt-6 flex items-center gap-3 rounded-2xl border border-green-900/50 bg-green-950/30 px-5 py-3">
-          <span className="text-sm font-medium text-green-400">✓ Saved to Google Drive</span>
-          <a
-            href={driveFileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-auto shrink-0 text-sm text-sky-500 underline underline-offset-2 hover:text-sky-400"
-          >
-            Open →
-          </a>
+            <SourcesPanel sources={sources} findings={findings} />
+
+            {status === 'done' && driveFileUrl && (
+              <div className="border-t border-rule pt-5">
+                <span className="font-mono text-xs uppercase tracking-[0.15em] text-teal-conf">
+                  Saved to Drive
+                </span>
+                <a
+                  href={driveFileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1.5 block text-sm text-gold underline underline-offset-2 transition-colors hover:text-cream"
+                >
+                  Open in Drive →
+                </a>
+              </div>
+            )}
+
+            {status === 'done' && driveSaveFailed && (
+              <p className="border-t border-rule pt-5 text-sm text-amber-conf">
+                Brief could not be saved to Drive — sign out and back in to refresh your session.
+              </p>
+            )}
+
+            {status === 'done' && !driveFileUrl && !isAuthenticated && (
+              <p className="border-t border-rule pt-5 text-sm text-muted">
+                Sign in with Google to save briefs to Drive and recall them in future sessions.
+              </p>
+            )}
+          </div>
+
         </div>
-      )}
-
-      {/* Prompt unauthenticated users to sign in */}
-      {status === 'done' && !driveFileUrl && !isAuthenticated && (
-        <p className="mt-6 text-sm text-slate-500">
-          Sign in with Google to save this brief to Drive and recall it in future sessions.
-        </p>
       )}
     </section>
   );

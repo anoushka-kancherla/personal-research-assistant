@@ -18,11 +18,11 @@ export default function ResearchInput({ onSubmit, isSearching, defaultValue = ''
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl shadow-slate-950/20">
-      <label htmlFor="query" className="block text-sm font-medium text-slate-300">
+    <form onSubmit={handleSubmit}>
+      <label htmlFor="query" className="block font-mono text-xs uppercase tracking-[0.2em] text-muted">
         Research topic
       </label>
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end">
         <input
           id="query"
           type="text"
@@ -30,12 +30,12 @@ export default function ResearchInput({ onSubmit, isSearching, defaultValue = ''
           onChange={(event) => setQuery(event.target.value)}
           placeholder="e.g. latest trends in generative AI research"
           disabled={isSearching}
-          className="min-w-0 flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 disabled:opacity-60"
+          className="min-w-0 flex-1 border-b border-rule bg-transparent pb-2.5 pt-1 text-cream placeholder:text-dim focus:border-gold focus:outline-none disabled:opacity-50 transition-colors duration-150"
         />
         <button
           type="submit"
           disabled={isSearching || !query.trim()}
-          className="inline-flex items-center justify-center rounded-2xl bg-sky-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className="shrink-0 border border-gold px-6 py-2.5 font-mono text-xs uppercase tracking-[0.2em] text-gold transition-colors duration-150 hover:bg-gold hover:text-canvas disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isSearching ? 'Searching…' : 'Start research'}
         </button>

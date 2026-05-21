@@ -30,13 +30,16 @@ export default function BriefCard({ id, name, createdTime }: Props) {
   return (
     <Link
       href={`/history/${id}`}
-      className="flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-900/80 px-5 py-4 transition-colors hover:border-slate-700 hover:bg-slate-800/80"
+      title={query}
+      className="group flex items-center justify-between gap-4 border-b border-rule py-4 transition-colors hover:bg-surface"
     >
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-slate-100">{query}</p>
-        <p className="mt-1 text-xs text-slate-500">{date}</p>
+        <p className="truncate text-sm text-cream2 transition-colors group-hover:text-cream">
+          {query}
+        </p>
+        <p className="mt-1 font-mono text-xs text-dim">{date}</p>
       </div>
-      <span className="shrink-0 text-slate-600">→</span>
+      <span className="shrink-0 text-dim transition-colors group-hover:text-gold">→</span>
     </Link>
   );
 }

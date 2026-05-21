@@ -138,7 +138,15 @@ export async function POST(request: Request) {
           }
         }
       } catch (err) {
-        controller.error(err);
+        const message =
+          err instanceof Error ? err.message : 'An unexpected error occurred.';
+        try {
+          controller.enqueue(
+            encoder.encode(JSON.stringify({ type: 'stream_error', message }) + '\n')
+          );
+        } catch {
+          // controller may already be closing — ignore
+        }
       } finally {
         controller.close();
       }

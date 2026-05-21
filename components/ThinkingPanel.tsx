@@ -12,17 +12,16 @@ export default function ThinkingPanel({ thinkingText }: Props) {
   if (!thinkingText) return null;
 
   return (
-    <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-950/60">
+    <div className="border-t border-rule pt-5">
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+        className="flex min-h-[44px] w-full items-center justify-between text-left"
       >
-        <span className="text-sm font-medium text-slate-400">How Claude approached this</span>
-        <span className="shrink-0 text-xs text-slate-600">{isOpen ? '▲' : '▼'}</span>
+        <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted">Reasoning</span>
+        <span className="text-xs text-dim">{isOpen ? '▲' : '▼'}</span>
       </button>
-
       {isOpen && (
-        <pre className="max-h-96 overflow-y-auto border-t border-slate-800 px-5 py-4 text-xs leading-relaxed whitespace-pre-wrap break-words text-slate-500">
+        <pre className="mt-4 max-h-64 overflow-y-auto font-mono text-xs leading-relaxed whitespace-pre-wrap break-words text-dim">
           {thinkingText}
         </pre>
       )}

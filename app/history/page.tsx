@@ -36,67 +36,77 @@ export default function HistoryPage() {
   }, [authStatus]);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
+    <main className="min-h-screen">
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-        <header className="mb-10">
-          <div className="flex items-start justify-between gap-4">
+
+        <header className="mb-8 sm:mb-12">
+          <div className="flex items-center justify-between">
             <Link
               href="/"
-              className="text-sm text-slate-400 underline underline-offset-2 hover:text-white"
+              className="font-mono text-xs uppercase tracking-[0.2em] text-muted transition-colors hover:text-cream"
             >
               ← Back
             </Link>
             <AuthButton />
           </div>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+          <h1 className="mt-10 font-serif text-4xl font-medium text-cream sm:text-5xl">
             Past research
           </h1>
-          <p className="mt-4 text-slate-300">
-            Briefs saved to your Google Drive.
-          </p>
+          <p className="mt-3 text-sm text-muted">Briefs saved to your Google Drive.</p>
         </header>
 
+        {/* Not signed in */}
         {!isAuthenticated && authStatus !== 'loading' && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-8 text-center">
-            <p className="mb-4 text-slate-400">Sign in to view your research history.</p>
+          <div className="border-t border-rule pt-8 text-center">
+            <p className="mb-6 text-sm text-muted">Sign in to view your research history.</p>
             <AuthButton />
           </div>
         )}
 
+        {/* Loading skeleton */}
         {isAuthenticated && loadState === 'loading' && (
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="h-16 animate-pulse rounded-2xl border border-slate-800 bg-slate-900/80"
-              />
+          <div className="border-t border-rule">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="border-b border-rule py-4">
+                <div className="h-4 w-2/3 animate-pulse rounded bg-surface2" />
+                <div className="mt-2 h-3 w-1/4 animate-pulse rounded bg-surface2" />
+              </div>
             ))}
           </div>
         )}
 
+        {/* Error */}
         {isAuthenticated && loadState === 'error' && (
-          <div className="rounded-2xl border border-red-900/50 bg-red-950/30 p-5 text-red-400">
+          <p className="border-t border-rule pt-6 text-sm text-coral-conf">
             Could not load history. Check your connection and try again.
-          </div>
+          </p>
         )}
 
+        {/* Empty state */}
         {isAuthenticated && loadState === 'loaded' && briefs.length === 0 && (
-          <div className="rounded-3xl border border-dashed border-slate-700 p-8 text-center text-slate-400">
-            No briefs yet.{' '}
-            <Link href="/" className="text-sky-500 underline underline-offset-2 hover:text-sky-400">
-              Run a research query
-            </Link>{' '}
-            to get started.
+          <div className="border-t border-rule pt-8">
+            <p className="text-sm text-muted">
+              No briefs yet.{' '}
+              <Link
+                href="/"
+                className="text-gold underline underline-offset-2 transition-colors hover:text-cream"
+              >
+                Run a research query
+              </Link>{' '}
+              to get started.
+            </p>
           </div>
         )}
 
+        {/* Brief list */}
         {isAuthenticated && loadState === 'loaded' && briefs.length > 0 && (
-          <div className="space-y-3">
+          <div className="border-t border-rule">
             {briefs.map((b) => (
               <BriefCard key={b.id} id={b.id} name={b.name} createdTime={b.createdTime} />
             ))}
           </div>
         )}
+
       </div>
     </main>
   );
