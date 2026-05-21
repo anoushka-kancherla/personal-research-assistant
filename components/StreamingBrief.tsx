@@ -72,6 +72,14 @@ export default function StreamingBrief({
         </div>
       )}
 
+      {status === 'done' &&
+        findings.length > 0 &&
+        findings.filter((f) => f.confidence === 'low').length / findings.length >= 0.5 && (
+          <div className="mt-4 rounded-2xl border border-yellow-900/50 bg-yellow-950/30 px-5 py-3 text-sm text-yellow-400">
+            Most findings have low confidence — try a more specific query for stronger results.
+          </div>
+        )}
+
       <SourcesPanel sources={sources} findings={findings} />
 
       {/* Drive confirmation banner */}

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import ResearchInput from '@/components/ResearchInput';
 import StreamingBrief from '@/components/StreamingBrief';
 import AuthButton from '@/components/AuthButton';
@@ -11,8 +13,18 @@ import type { Finding, Source } from '@/types/brief';
 type Status = 'idle' | 'searching' | 'done' | 'error';
 
 export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+function HomeContent() {
   const { status: authStatus } = useSession();
   const isAuthenticated = authStatus === 'authenticated';
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('q') ?? '';
 
   const [findings, setFindings] = useState<Finding[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
@@ -122,7 +134,17 @@ export default function Home() {
         <header className="mb-10">
           <div className="flex items-start justify-between gap-4">
             <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Research Assistant</p>
-            <AuthButton />
+            <div className="flex items-center gap-4">
+              {isAuthenticated && (
+                <Link
+                  href="/history"
+                  className="text-sm text-slate-400 underline underline-offset-2 hover:text-white"
+                >
+                  Past research →
+                </Link>
+              )}
+              <AuthButton />
+            </div>
           </div>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             Ask a research question and get a structured brief.
@@ -133,7 +155,7 @@ export default function Home() {
         </header>
 
         <section className="space-y-8">
-          <ResearchInput onSubmit={handleResearch} isSearching={status === 'searching'} />
+          <ResearchInput onSubmit={handleResearch} isSearching={status === 'searching'} defaultValue={initialQuery} />
           <StreamingBrief
             findings={findings}
             sources={sources}

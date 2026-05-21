@@ -5,10 +5,11 @@ import { useState } from 'react';
 type Props = {
   onSubmit: (query: string) => void;
   isSearching: boolean;
+  defaultValue?: string;
 };
 
-export default function ResearchInput({ onSubmit, isSearching }: Props) {
-  const [query, setQuery] = useState('');
+export default function ResearchInput({ onSubmit, isSearching, defaultValue = '' }: Props) {
+  const [query, setQuery] = useState(defaultValue);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
