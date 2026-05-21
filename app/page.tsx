@@ -19,6 +19,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('idle');
   const [rawText, setRawText] = useState('');
   const [driveFileUrl, setDriveFileUrl] = useState<string | null>(null);
+  const [thinkingText, setThinkingText] = useState('');
 
   async function handleResearch(query: string) {
     setStatus('searching');
@@ -26,6 +27,7 @@ export default function Home() {
     setSources([]);
     setRawText('');
     setDriveFileUrl(null);
+    setThinkingText('');
 
     try {
       const response = await fetch('/api/research', {
@@ -43,6 +45,7 @@ export default function Home() {
       const decoder = new TextDecoder();
       let buffer = '';
       let textAccumulator = '';
+      let thinkingAccumulator = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -67,8 +70,21 @@ export default function Home() {
             continue;
           }
 
-          // Accumulate text deltas and attempt live JSON parse
           const delta = event.delta as Record<string, unknown> | undefined;
+          const block = event.content_block as Record<string, unknown> | undefined;
+
+          // Separator between thinking blocks when a new one starts
+          if (event.type === 'content_block_start' && block?.type === 'thinking') {
+            if (thinkingAccumulator) thinkingAccumulator += '\n\n---\n\n';
+          }
+
+          // Accumulate thinking deltas
+          if (event.type === 'content_block_delta' && delta?.type === 'thinking_delta') {
+            thinkingAccumulator += delta.thinking as string;
+            setThinkingText(thinkingAccumulator);
+          }
+
+          // Accumulate text deltas and attempt live JSON parse
           if (event.type === 'content_block_delta' && delta?.type === 'text_delta') {
             textAccumulator += delta.text as string;
             setRawText(textAccumulator);
@@ -77,7 +93,6 @@ export default function Home() {
           }
 
           // Collect sources from web_search_tool_result blocks
-          const block = event.content_block as Record<string, unknown> | undefined;
           if (event.type === 'content_block_start' && block?.type === 'web_search_tool_result') {
             const content = block.content;
             if (Array.isArray(content)) {
@@ -126,6 +141,7 @@ export default function Home() {
             rawText={rawText}
             driveFileUrl={driveFileUrl}
             isAuthenticated={isAuthenticated}
+            thinkingText={thinkingText}
           />
         </section>
       </div>

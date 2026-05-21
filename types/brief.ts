@@ -17,3 +17,15 @@ export type ResearchBrief = {
   sources: Source[];
   timestamp: string;
 };
+
+export type AuditLog = {
+  session_id: string;
+  query: string;
+  timestamp: string;
+  search_queries_run: string[];
+  sources_retrieved: number;
+  sources_used: number;
+  confidence_breakdown: { high: number; medium: number; low: number };
+  past_briefs_recalled: string[];
+  brief_file_id: string;
+};

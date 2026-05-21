@@ -1,12 +1,9 @@
 'use client';
 
 import type { Finding, Source } from '@/types/brief';
-
-const CONFIDENCE_BADGE: Record<string, string> = {
-  high: 'bg-green-900/40 text-green-400',
-  medium: 'bg-yellow-900/40 text-yellow-400',
-  low: 'bg-red-900/40 text-red-400',
-};
+import ThinkingPanel from './ThinkingPanel';
+import FindingCard from './FindingCard';
+import SourcesPanel from './SourcesPanel';
 
 const STATUS_LABEL: Record<string, string> = {
   idle: 'idle',
@@ -22,6 +19,7 @@ type Props = {
   rawText: string;
   driveFileUrl: string | null;
   isAuthenticated: boolean;
+  thinkingText: string;
 };
 
 export default function StreamingBrief({
@@ -31,6 +29,7 @@ export default function StreamingBrief({
   rawText,
   driveFileUrl,
   isAuthenticated,
+  thinkingText,
 }: Props) {
   return (
     <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl shadow-slate-950/20">
@@ -63,70 +62,17 @@ export default function StreamingBrief({
         </pre>
       )}
 
-      {/* Structured findings — shown as soon as JSON becomes parseable */}
+      <ThinkingPanel thinkingText={thinkingText} />
+
       {findings.length > 0 && (
         <div className="space-y-4">
           {findings.map((finding, index) => (
-            <div key={index} className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm uppercase tracking-[0.15em] text-sky-400">Finding {index + 1}</p>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${CONFIDENCE_BADGE[finding.confidence] ?? CONFIDENCE_BADGE.low}`}
-                >
-                  {finding.confidence}
-                </span>
-              </div>
-              <p className="mt-2 text-base text-slate-100">{finding.finding}</p>
-              {finding.confidence_reason && (
-                <p className="mt-2 text-sm text-slate-400">{finding.confidence_reason}</p>
-              )}
-              {finding.caveats && (
-                <p className="mt-2 text-sm italic text-slate-500">Caveat: {finding.caveats}</p>
-              )}
-              {finding.sources.length > 0 && (
-                <ul className="mt-3 space-y-1">
-                  {finding.sources.map((src, si) => (
-                    <li key={si}>
-                      <a
-                        href={src}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="break-all text-xs text-sky-500 underline underline-offset-2 hover:text-sky-400"
-                      >
-                        {src}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <FindingCard key={index} finding={finding} index={index} />
           ))}
         </div>
       )}
 
-      {/* Sources panel — populated from web_search_tool_result blocks */}
-      {sources.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
-          <h3 className="text-sm font-medium uppercase tracking-[0.2em] text-slate-400">
-            Sources retrieved ({sources.length})
-          </h3>
-          <ul className="mt-3 space-y-2">
-            {sources.map((source, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <span className="mt-0.5 shrink-0 text-xs text-slate-600">{index + 1}.</span>
-                <a
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="break-all text-sm text-sky-500 underline underline-offset-2 hover:text-sky-400"
-                >
-                  {source.title || source.url}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <SourcesPanel sources={sources} findings={findings} />
 
       {/* Drive confirmation banner */}
       {status === 'done' && driveFileUrl && (

@@ -53,6 +53,23 @@ export type BriefMeta = {
   createdTime: string;
 };
 
+export async function listAllBriefs(accessToken: string): Promise<BriefMeta[]> {
+  const folderId = await findOrCreateBriefsFolder(accessToken);
+
+  const url = new URL(DRIVE_FILES_URL);
+  url.searchParams.set(
+    'q',
+    `'${folderId}' in parents and mimeType='application/json' and trashed=false`
+  );
+  url.searchParams.set('orderBy', 'createdTime desc');
+  url.searchParams.set('pageSize', '100');
+  url.searchParams.set('fields', 'files(id,name,createdTime)');
+
+  const res = await driveRequest(url.toString(), accessToken);
+  const data = await res.json() as { files?: BriefMeta[] };
+  return data.files ?? [];
+}
+
 export async function listPastBriefs(accessToken: string): Promise<BriefMeta[]> {
   const folderId = await findOrCreateBriefsFolder(accessToken);
 
