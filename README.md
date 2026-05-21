@@ -1,5 +1,7 @@
 # Personal Research Assistant
 
+**[personal-research-assistant.vercel.app](https://personal-research-assistant.vercel.app/)**
+
 Your research instrument. Create briefs on any topic, with source attribution, confidence signals, and full reasoning traces saved to your Google Drive.
 
 Built with Next.js 14, the Anthropic Claude API (with extended thinking + web search), and Google OAuth/Drive.
@@ -71,6 +73,44 @@ types/
 
 ---
 
+## How it works
+
+### Research stream (`POST /api/research`)
+
+1. Optionally reads up to 3 past briefs from Drive and injects them as prior context
+2. Opens a streaming `messages.stream()` call to Claude with extended thinking and web search enabled
+3. Forwards every raw SDK event to the client as newline-delimited JSON (NDJSON)
+4. After the stream ends, parses the full output, saves a `ResearchBrief` JSON to Drive, and enqueues a `drive_saved` event with the file URL
+5. Writes an audit log to Drive recording queries run, sources retrieved, and findings
+
+### Client streaming (`app/page.tsx`)
+
+The client reads the NDJSON stream line-by-line and routes events:
+
+| Event | Action |
+|---|---|
+| `content_block_start` (thinking) | Phase → `thinking` |
+| `content_block_start` (server_tool_use / web_search) | Phase → `searching` |
+| `content_block_start` (web_search_tool_result) | Search count +1, sources collected |
+| `content_block_delta` (thinking_delta) | Thinking text accumulates |
+| `content_block_delta` (text_delta) | Phase → `synthesizing`; raw text accumulates; live JSON parse attempted |
+| `drive_saved` | Drive URL stored |
+| `stream_error` | Error message surfaced to UI |
+
+The status label in the brief header updates in real time: `starting… → thinking… → search 1… → synthesizing… → done`.
+
+### Confidence ratings
+
+The system prompt enforces strict source-quality rules:
+
+- **High** — primary sources only: official press releases, regulatory filings, peer-reviewed papers, on-record statements from named individuals with direct knowledge
+- **Medium** — credible secondary reporting (Reuters, Bloomberg, WSJ, AP, BBC) with named sourcing, or partial official confirmation
+- **Low** — leaks, anonymous sources, fan/enthusiast sites, social media, patent filings, or any information described as unconfirmed
+
+Outlet count does not raise confidence. Ten sites repeating the same anonymous leak is still one low-quality source.
+
+---
+
 ## Local setup
 
 ### 1. Clone and install
@@ -112,58 +152,6 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
-
----
-
-## How it works
-
-### Research stream (`POST /api/research`)
-
-1. Optionally reads up to 3 past briefs from Drive and injects them as prior context
-2. Opens a streaming `messages.stream()` call to Claude with extended thinking and web search enabled
-3. Forwards every raw SDK event to the client as newline-delimited JSON (NDJSON)
-4. After the stream ends, parses the full output, saves a `ResearchBrief` JSON to Drive, and enqueues a `drive_saved` event with the file URL
-5. Writes an audit log to Drive recording queries run, sources retrieved, and findings
-
-### Client streaming (`app/page.tsx`)
-
-The client reads the NDJSON stream line-by-line and routes events:
-
-| Event | Action |
-|---|---|
-| `content_block_start` (thinking) | Phase → `thinking` |
-| `content_block_start` (server_tool_use / web_search) | Phase → `searching` |
-| `content_block_start` (web_search_tool_result) | Search count +1, sources collected |
-| `content_block_delta` (thinking_delta) | Thinking text accumulates |
-| `content_block_delta` (text_delta) | Phase → `synthesizing`; raw text accumulates; live JSON parse attempted |
-| `drive_saved` | Drive URL stored |
-| `stream_error` | Error message surfaced to UI |
-
-The status label in the brief header updates in real time: `starting… → thinking… → search 1… → synthesizing… → done`.
-
-### Confidence ratings
-
-The system prompt enforces strict source-quality rules:
-
-- **High** — primary sources only: official press releases, regulatory filings, peer-reviewed papers, on-record statements from named individuals with direct knowledge
-- **Medium** — credible secondary reporting (Reuters, Bloomberg, WSJ, AP, BBC) with named sourcing, or partial official confirmation
-- **Low** — leaks, anonymous sources, fan/enthusiast sites, social media, patent filings, or any information described as unconfirmed
-
-Outlet count does not raise confidence. Ten sites repeating the same anonymous leak is still one low-quality source.
-
----
-
-## Deploying to Vercel
-
-```bash
-npm run build   # verify no build errors locally first
-```
-
-1. Push to GitHub
-2. Import the repo in [vercel.com/new](https://vercel.com/new)
-3. Add all five environment variables from `.env.local` in the Vercel project settings
-4. Update **Authorised redirect URIs** in the Google Cloud Console to include `https://<your-domain>/api/auth/callback/google`
-5. Set `NEXTAUTH_URL` to `https://<your-domain>` in Vercel
 
 ---
 
